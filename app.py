@@ -167,7 +167,11 @@ section[data-testid="stSidebar"] { display: none; }
     padding: 0.5rem 1.1rem;
     letter-spacing: 0.01em;
     transition: background 0.15s;
-    white-space: nowrap;
+    white-space: normal !important;
+    word-break: break-word !important;
+    height: auto !important;
+    min-height: 2.4rem;
+    line-height: 1.3;
 }
 .stButton > button:hover { background: #4B4FC8; border: none; }
 .stButton > button:focus { outline: none; border: none; box-shadow: none; }
@@ -394,7 +398,7 @@ overdue   = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_
 due_today = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_date"]) == 0)
 
 # ── PAGE HEADER ───────────────────────────────────────────────────────────────
-h_left, h_right = st.columns([4, 1], gap="small")
+h_left, h_btn1, h_btn2 = st.columns([5, 0.7, 0.7], gap="small")
 
 with h_left:
     st.markdown("""
@@ -402,18 +406,18 @@ with h_left:
     <p class="page-sub">UET Taxila &nbsp;&middot;&nbsp; Student Planner</p>
     """, unsafe_allow_html=True)
 
-with h_right:
-    btn_a, btn_b = st.columns(2, gap="small")
-    with btn_a:
-        if st.button("Add Task", use_container_width=True, key="btn_add_task"):
-            st.session_state.show_form = True
-            st.session_state.edit_id = None
-    with btn_b:
-        with st.container():
-            st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
-            if st.button("Courses", use_container_width=True, key="btn_courses"):
-                st.session_state.show_courses = not st.session_state.show_courses
-            st.markdown('</div>', unsafe_allow_html=True)
+with h_btn1:
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+    if st.button("Add Task", use_container_width=True, key="btn_add_task"):
+        st.session_state.show_form = True
+        st.session_state.edit_id = None
+
+with h_btn2:
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
+    if st.button("Courses", use_container_width=True, key="btn_courses"):
+        st.session_state.show_courses = not st.session_state.show_courses
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<hr style="margin-top:1rem;margin-bottom:1.5rem">', unsafe_allow_html=True)
 
@@ -429,13 +433,13 @@ st.markdown(f"""
 
 # ── FILTER ROW ────────────────────────────────────────────────────────────────
 with st.container():
-    f1, f2, f3, f4, f5 = st.columns([2, 2, 2, 2, 1], gap="small")
+    f1, f2, f3, f4, f5 = st.columns([2.2, 2, 2, 2, 1.4], gap="small")
     with f1:
         sort_by = st.selectbox("Sort By", [
             "Deadline (soonest first)", "Deadline (latest first)",
             "Priority (high to low)", "Alphabetically (A to Z)",
             "Alphabetically (Z to A)", "Date Added (newest)", "Date Added (oldest)",
-        ], label_visibility="visible")
+        ])
     with f2:
         filter_cat = st.multiselect("Category", CATEGORIES, placeholder="All categories")
     with f3:
@@ -447,8 +451,13 @@ with st.container():
     with f4:
         filter_priority = st.multiselect("Priority", PRIORITY, placeholder="All priorities")
     with f5:
-        st.markdown("<div style='height:1.65rem'></div>", unsafe_allow_html=True)
-        show_done = st.toggle("Show Done", value=True)
+        st.markdown(
+            '<p style="font-size:0.69rem;font-weight:700;color:#3D4451;'
+            'text-transform:uppercase;letter-spacing:0.08em;margin:0 0 0.55rem 0">'
+            'Show Done</p>',
+            unsafe_allow_html=True
+        )
+        show_done = st.toggle("Show Done", value=True, label_visibility="collapsed")
 
 st.markdown("<hr style='margin-top:0.2rem;margin-bottom:1.4rem'>", unsafe_allow_html=True)
 
