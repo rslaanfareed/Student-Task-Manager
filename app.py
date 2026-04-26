@@ -420,7 +420,7 @@ st.markdown('<div class="page-sub">Stay on top of every deadline.</div>', unsafe
 
 if st.session_state.show_add_course:
     with st.container(border=True):
-        st.markdown('<div class="form-title">Manage Courses</div>', unsafe_allow_html=True)
+        st.subheader("Manage Courses")
         new_course = st.text_input("Add a new course", placeholder="e.g. Compiler Construction")
         c1, c2 = st.columns([1, 3])
         with c1:
@@ -458,7 +458,7 @@ def task_form(edit_task=None):
     date_val     = datetime.strptime(str(edit_task.get("due_date", date.today())), "%Y-%m-%d").date() if is_edit else date.today()
     time_val_str = edit_task.get("due_time", "")           if is_edit else ""
 
-    st.markdown(f'<div class="form-title">{"Edit Task" if is_edit else "New Task"}</div>', unsafe_allow_html=True)
+    st.subheader("Edit Task" if is_edit else "New Task")
     with st.form("task_form"):
         col1, col2 = st.columns(2)
         with col1:
