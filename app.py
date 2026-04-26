@@ -174,22 +174,23 @@ section[data-testid="stSidebar"] { display: none; }
 .stButton > button:hover { background: #4B4FC8; border: none; }
 .stButton > button:focus { outline: none; border: none; box-shadow: none; }
 
-.btn-ghost > button {
-    background: #0E1117 !important;
-    border: 1px solid #1A1F2E !important;
-    color: #6B7280 !important;
-}
-.btn-ghost > button:hover {
+.stButton > button[kind="secondary"] {
     background: #13161F !important;
+    border: 1px solid #2A2F42 !important;
     color: #9CA3AF !important;
 }
-
-.btn-danger > button {
-    background: transparent !important;
-    border: 1px solid #3B1010 !important;
-    color: #B45454 !important;
+.stButton > button[kind="secondary"]:hover {
+    background: #1C2030 !important;
+    color: #D1D5DB !important;
+    border-color: #3D4451 !important;
 }
-.btn-danger > button:hover {
+
+/* Delete button — target by key prefix */
+button[data-testid*="del_"] {
+    color: #B45454 !important;
+    border-color: #3B1010 !important;
+}
+button[data-testid*="del_"]:hover {
     background: #1A0808 !important;
     color: #E05C5C !important;
 }
@@ -410,10 +411,8 @@ with h_btn1:
         st.session_state.edit_id = None
 
 with h_btn2:
-    st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
-    if st.button("Courses", use_container_width=True, key="btn_courses"):
+    if st.button("Courses", use_container_width=True, key="btn_courses", type="secondary"):
         st.session_state.show_courses = not st.session_state.show_courses
-    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<hr style="margin-top:1rem;margin-bottom:1.5rem">', unsafe_allow_html=True)
 
@@ -484,12 +483,10 @@ if st.session_state.show_courses:
         cols = st.columns(3, gap="small")
         for i, c in enumerate(sorted(st.session_state.courses)):
             with cols[i % 3]:
-                st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
-                if st.button(c, key=f"rm_{c}", use_container_width=True):
+                if st.button(c, key=f"rm_{c}", use_container_width=True, type="secondary"):
                     st.session_state.courses.remove(c)
                     save_courses(st.session_state.courses)
                     st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -698,20 +695,16 @@ def render_task(task):
         st.markdown('</div>', unsafe_allow_html=True)
 
     with cb:
-        st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
-        if st.button("Edit", key=f"edit_{tid}", use_container_width=True):
+        if st.button("Edit", key=f"edit_{tid}", use_container_width=True, type="secondary"):
             st.session_state.edit_id   = tid
             st.session_state.show_form = False
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
     with cc:
-        st.markdown('<div class="btn-danger">', unsafe_allow_html=True)
-        if st.button("Delete", key=f"del_{tid}", use_container_width=True):
+        if st.button("Delete", key=f"del_{tid}", use_container_width=True, type="secondary"):
             st.session_state.tasks = [t for t in st.session_state.tasks if t["id"] != tid]
             save_tasks(st.session_state.tasks)
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # ── TASK LIST ─────────────────────────────────────────────────────────────────
 pending = [t for t in tasks if not t.get("done")]
