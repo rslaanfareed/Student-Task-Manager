@@ -1,7 +1,7 @@
 <div align="center">
 
 # TaskBoard
-### Student Task Manager built with Streamlit
+### Student Task Manager
 
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org/)
@@ -30,15 +30,15 @@ A dark-themed academic task manager for tracking assignments, exams, quizzes, pr
 ## Run Locally
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/rslaanfareed/Student-Task-Manager
+cd Student-Task-Manager
 
 pip install -r requirements.txt
 
 streamlit run app.py
 ```
 
-App runs at http://localhost:8501
+LIVE DEMO https://student-task-manager-i4lregjhd82rxtcmzqd2cn.streamlit.app/
 
 ---
 
@@ -54,7 +54,6 @@ taskboard/
 
 ---
 
-## Author
 
 **Arslan Fareed** - Software Engineering, UET Taxila  
 [github.com/rslaanfareed](https://github.com/rslaanfareed)
