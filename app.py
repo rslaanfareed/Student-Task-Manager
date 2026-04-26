@@ -419,33 +419,29 @@ st.markdown('<div class="page-sub">Stay on top of every deadline.</div>', unsafe
 # ---------- manage courses panel ----------
 
 if st.session_state.show_add_course:
-    st.markdown('<div class="form-box">', unsafe_allow_html=True)
-    st.markdown('<div class="form-title">Manage Courses</div>', unsafe_allow_html=True)
-
-    new_course = st.text_input("Add a new course", placeholder="e.g. Compiler Construction")
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        if st.button("Add Course", use_container_width=True):
-            nc = new_course.strip()
-            if nc and nc not in st.session_state.courses:
-                st.session_state.courses.append(nc)
-                save_courses(st.session_state.courses)
-                st.success(f'"{nc}" added.')
-                st.rerun()
-            elif nc in st.session_state.courses:
-                st.warning("Already exists.")
-
-    if st.session_state.courses:
-        st.markdown("<br>**Current courses** (click to remove):", unsafe_allow_html=True)
-        cols = st.columns(3)
-        for i, c in enumerate(sorted(st.session_state.courses)):
-            with cols[i % 3]:
-                if st.button(f"x  {c}", key=f"rm_{c}", use_container_width=True):
-                    st.session_state.courses.remove(c)
+    with st.container(border=True):
+        st.markdown('<div class="form-title">Manage Courses</div>', unsafe_allow_html=True)
+        new_course = st.text_input("Add a new course", placeholder="e.g. Compiler Construction")
+        c1, c2 = st.columns([1, 3])
+        with c1:
+            if st.button("Add Course", use_container_width=True):
+                nc = new_course.strip()
+                if nc and nc not in st.session_state.courses:
+                    st.session_state.courses.append(nc)
                     save_courses(st.session_state.courses)
+                    st.success(f'"{nc}" added.')
                     st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
+                elif nc in st.session_state.courses:
+                    st.warning("Already exists.")
+        if st.session_state.courses:
+            st.markdown("**Current courses** (click to remove):")
+            cols = st.columns(3)
+            for i, c in enumerate(sorted(st.session_state.courses)):
+                with cols[i % 3]:
+                    if st.button(f"x  {c}", key=f"rm_{c}", use_container_width=True):
+                        st.session_state.courses.remove(c)
+                        save_courses(st.session_state.courses)
+                        st.rerun()
 
 
 # ---------- add/edit form ----------
@@ -462,9 +458,7 @@ def task_form(edit_task=None):
     date_val     = datetime.strptime(str(edit_task.get("due_date", date.today())), "%Y-%m-%d").date() if is_edit else date.today()
     time_val_str = edit_task.get("due_time", "")           if is_edit else ""
 
-    st.markdown('<div class="form-box">', unsafe_allow_html=True)
     st.markdown(f'<div class="form-title">{"Edit Task" if is_edit else "New Task"}</div>', unsafe_allow_html=True)
-
     with st.form("task_form"):
         col1, col2 = st.columns(2)
         with col1:
@@ -536,7 +530,6 @@ def task_form(edit_task=None):
             st.session_state.edit_id = None
             st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 edit_task_data = None
