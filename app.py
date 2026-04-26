@@ -396,7 +396,7 @@ overdue   = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_
 due_today = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_date"]) == 0)
 
 # ── PAGE HEADER ───────────────────────────────────────────────────────────────
-h_left, h_btn1, h_btn2 = st.columns([4, 1, 1], gap="small")
+h_left, h_btn1, h_btn2 = st.columns([4, 1, 1], gap="small", vertical_alignment="bottom")
 
 with h_left:
     st.markdown("""
@@ -405,13 +405,11 @@ with h_left:
     """, unsafe_allow_html=True)
 
 with h_btn1:
-    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
     if st.button("Add Task", use_container_width=True, key="btn_add_task"):
         st.session_state.show_form = True
         st.session_state.edit_id = None
 
 with h_btn2:
-    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
     st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
     if st.button("Courses", use_container_width=True, key="btn_courses"):
         st.session_state.show_courses = not st.session_state.show_courses
