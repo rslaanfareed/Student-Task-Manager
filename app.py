@@ -81,7 +81,9 @@ st.markdown("""
 *, html, body, [class*="css"] { font-family: 'Manrope', sans-serif !important; }
 .stApp { background:#0A0C10; color:#D1D5DB; }
 section[data-testid="stSidebar"] { background:#0E1117 !important; border-right:1px solid #1C2030; }
-#MainMenu, footer, header { visibility:hidden; }
+#MainMenu, footer { visibility:hidden; }
+header { visibility:visible; }
+header [data-testid="stToolbar"] { visibility:hidden; }
 
 .stButton > button {
     background:#6366F1; color:#fff; border:none; border-radius:8px;
