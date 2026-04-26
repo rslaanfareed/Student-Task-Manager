@@ -167,11 +167,9 @@ section[data-testid="stSidebar"] { display: none; }
     padding: 0.5rem 1.1rem;
     letter-spacing: 0.01em;
     transition: background 0.15s;
-    white-space: normal !important;
-    word-break: break-word !important;
-    height: auto !important;
-    min-height: 2.4rem;
-    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .stButton > button:hover { background: #4B4FC8; border: none; }
 .stButton > button:focus { outline: none; border: none; box-shadow: none; }
@@ -398,7 +396,7 @@ overdue   = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_
 due_today = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_date"]) == 0)
 
 # ── PAGE HEADER ───────────────────────────────────────────────────────────────
-h_left, h_btn1, h_btn2 = st.columns([5, 0.7, 0.7], gap="small")
+h_left, h_btn1, h_btn2 = st.columns([4, 1, 1], gap="small")
 
 with h_left:
     st.markdown("""
@@ -485,9 +483,9 @@ if st.session_state.show_courses:
 
     if st.session_state.courses:
         st.markdown('<p class="course-hint">Click a course to remove it</p>', unsafe_allow_html=True)
-        cols = st.columns(4, gap="small")
+        cols = st.columns(3, gap="small")
         for i, c in enumerate(sorted(st.session_state.courses)):
-            with cols[i % 4]:
+            with cols[i % 3]:
                 st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
                 if st.button(c, key=f"rm_{c}", use_container_width=True):
                     st.session_state.courses.remove(c)
