@@ -1,20 +1,19 @@
 import streamlit as st
-import pandas as pd
 import json
 import os
 from datetime import datetime, date, time
 import uuid
+import html
 
-# ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="TaskBoard · Student Planner",
-    page_icon="📋",
+    page_title="TaskBoard",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── Persistence helpers ───────────────────────────────────────────────────────
 DATA_FILE = "tasks.json"
+COURSES_FILE = "courses.json"
 
 def load_tasks():
     if os.path.exists(DATA_FILE):
@@ -26,293 +25,305 @@ def save_tasks(tasks):
     with open(DATA_FILE, "w") as f:
         json.dump(tasks, f, indent=2, default=str)
 
-# ── Session state ─────────────────────────────────────────────────────────────
+def load_courses():
+    default = [
+        "Data Structures and Algorithms",
+        "Object Oriented Programming",
+        "Database Systems",
+        "Operating Systems",
+        "Computer Networks",
+        "Software Engineering",
+        "Discrete Mathematics",
+        "Linear Algebra",
+        "Probability and Statistics",
+        "Web Engineering",
+        "Artificial Intelligence",
+        "Computer Architecture",
+    ]
+    if os.path.exists(COURSES_FILE):
+        with open(COURSES_FILE, "r") as f:
+            saved = json.load(f)
+        for c in default:
+            if c not in saved:
+                saved.append(c)
+        return saved
+    return default
+
+def save_courses(courses):
+    with open(COURSES_FILE, "w") as f:
+        json.dump(courses, f, indent=2)
+
 if "tasks" not in st.session_state:
     st.session_state.tasks = load_tasks()
+if "courses" not in st.session_state:
+    st.session_state.courses = load_courses()
 if "show_form" not in st.session_state:
     st.session_state.show_form = False
 if "edit_id" not in st.session_state:
     st.session_state.edit_id = None
+if "show_add_course" not in st.session_state:
+    st.session_state.show_add_course = False
 
-# ── Constants ─────────────────────────────────────────────────────────────────
 CATEGORIES = [
-    "📝  Assignment Deadline",
-    "📚  Exam",
-    "🧪  Scheduled Quiz",
-    "🎤  Presentation",
-    "📖  Study Session",
-    "🔬  Lab Report",
-    "💻  Project Milestone",
-    "📌  Other",
+    "Assignment Deadline",
+    "Exam",
+    "Scheduled Quiz",
+    "Presentation",
+    "Study Session",
+    "Lab Report",
+    "Project Milestone",
+    "Other",
 ]
 
-COURSES = [
-    "Data Structures & Algorithms",
-    "Object Oriented Programming",
-    "Database Systems",
-    "Operating Systems",
-    "Computer Networks",
-    "Software Engineering",
-    "Discrete Mathematics",
-    "Linear Algebra",
-    "Probability & Statistics",
-    "Web Engineering",
-    "Artificial Intelligence",
-    "Computer Architecture",
-    "Custom (type below)…",
-]
-
-PRIORITY = ["🔴  High", "🟡  Medium", "🟢  Low"]
+PRIORITY = ["High", "Medium", "Low"]
 
 CAT_COLORS = {
-    "📝  Assignment Deadline": "#FF6B6B",
-    "📚  Exam":               "#FF4D4D",
-    "🧪  Scheduled Quiz":     "#FFA94D",
-    "🎤  Presentation":       "#A78BFA",
-    "📖  Study Session":      "#4DABF7",
-    "🔬  Lab Report":         "#69DB7C",
-    "💻  Project Milestone":  "#F59F00",
-    "📌  Other":              "#ADB5BD",
+    "Assignment Deadline": "#E05C5C",
+    "Exam":                "#E05C5C",
+    "Scheduled Quiz":      "#E09A3A",
+    "Presentation":        "#9B7FE8",
+    "Study Session":       "#3A90D4",
+    "Lab Report":          "#3EAD72",
+    "Project Milestone":   "#D4952A",
+    "Other":               "#6B7280",
 }
 
 PRIORITY_COLORS = {
-    "🔴  High":   "#FF4D4D",
-    "🟡  Medium": "#FFA94D",
-    "🟢  Low":    "#69DB7C",
+    "High":   "#E05C5C",
+    "Medium": "#E09A3A",
+    "Low":    "#3EAD72",
 }
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
+*, html, body, [class*="css"] {
+    font-family: 'Manrope', sans-serif !important;
 }
 
-/* Background */
 .stApp {
-    background: #0D0F14;
-    color: #E8EAF0;
+    background: #0A0C10;
+    color: #D1D5DB;
 }
 
-/* Sidebar */
 section[data-testid="stSidebar"] {
-    background: #12151C !important;
-    border-right: 1px solid #1E2330;
+    background: #0E1117 !important;
+    border-right: 1px solid #1C2030;
 }
 
-/* Hide default streamlit elements */
 #MainMenu, footer, header { visibility: hidden; }
 
-/* Header */
-.tb-header {
-    padding: 2rem 0 1.5rem 0;
-    margin-bottom: 1rem;
-}
-.tb-header h1 {
-    font-family: 'Syne', sans-serif;
+.tb-logo {
+    font-size: 1.3rem;
     font-weight: 800;
-    font-size: 2.6rem;
-    letter-spacing: -1px;
-    color: #FFFFFF;
-    margin: 0;
+    color: #fff;
+    letter-spacing: -0.5px;
+    padding: 1.4rem 0 0.2rem 0;
 }
-.tb-header h1 span {
-    color: #6C63FF;
-}
-.tb-header p {
-    color: #6B7280;
-    margin: 4px 0 0 0;
-    font-size: 0.95rem;
+.tb-logo span { color: #6366F1; }
+.tb-sub {
+    font-size: 0.72rem;
+    color: #4B5563;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.2rem;
 }
 
-/* Stats row */
-.stat-card {
-    background: #12151C;
-    border: 1px solid #1E2330;
-    border-radius: 14px;
-    padding: 1.1rem 1.3rem;
-    text-align: center;
-}
-.stat-card .num {
-    font-family: 'Syne', sans-serif;
+.page-title {
     font-size: 2rem;
     font-weight: 800;
-    color: #6C63FF;
-    line-height: 1;
+    color: #F9FAFB;
+    letter-spacing: -0.8px;
+    margin: 1.8rem 0 0.2rem 0;
 }
-.stat-card .lbl {
-    font-size: 0.75rem;
-    color: #6B7280;
-    margin-top: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.page-sub {
+    font-size: 0.88rem;
+    color: #4B5563;
+    margin-bottom: 1.6rem;
+    font-weight: 400;
 }
 
-/* Task card */
-.task-card {
-    background: #12151C;
-    border: 1px solid #1E2330;
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 0.9rem;
-    transition: border-color 0.2s;
-    position: relative;
-    overflow: hidden;
-}
-.task-card:hover { border-color: #6C63FF; }
-.task-card.done {
-    opacity: 0.45;
-    border-color: #1E2330 !important;
-}
-.task-card .accent-bar {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 4px;
-    border-radius: 4px 0 0 4px;
-}
-.task-card .cat-badge {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
-.task-card .task-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.05rem;
+.stat-box {
+    background: #13161F;
+    border: 1px solid #1C2030;
+    border-radius: 10px;
+    padding: 0.8rem 0.6rem;
+    text-align: center;
+}
+.stat-box .n {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #6366F1;
+}
+.stat-box .n.red { color: #E05C5C; }
+.stat-box .n.amber { color: #E09A3A; }
+.stat-box .n.green { color: #3EAD72; }
+.stat-box .l {
+    font-size: 0.65rem;
+    color: #4B5563;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+    font-weight: 600;
+}
+
+.section-label {
+    font-size: 0.68rem;
     font-weight: 700;
-    color: #FFFFFF;
-    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #374151;
+    margin: 1.4rem 0 0.6rem 0;
+}
+
+.task-card {
+    background: #0E1117;
+    border: 1px solid #1C2030;
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem 1.1rem 1.5rem;
+    margin-bottom: 0.7rem;
+    position: relative;
+    transition: border-color 0.15s;
+}
+.task-card:hover { border-color: #6366F1; }
+.task-card.done { opacity: 0.38; }
+
+.task-card .bar {
+    position: absolute;
+    left: 0; top: 12px; bottom: 12px;
+    width: 3px;
+    border-radius: 3px;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-right: 5px;
+    margin-bottom: 0.55rem;
+}
+
+.task-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #F3F4F6;
+    margin: 0 0 2px 0;
+    letter-spacing: -0.2px;
 }
 .task-card.done .task-title {
     text-decoration: line-through;
-    color: #6B7280;
+    color: #4B5563;
 }
-.task-card .course-name {
-    font-size: 0.82rem;
-    color: #6B7280;
-    margin-bottom: 0.5rem;
+
+.task-course {
+    font-size: 0.78rem;
+    color: #6366F1;
+    font-weight: 600;
+    margin-bottom: 0.45rem;
 }
-.task-card .meta-row {
+
+.task-meta {
     display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
-    color: #6B7280;
-    margin-top: 0.5rem;
+    gap: 1.2rem;
+    font-size: 0.75rem;
+    color: #4B5563;
     flex-wrap: wrap;
+    font-weight: 500;
 }
-.task-card .meta-row span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-.task-card .overdue {
-    color: #FF4D4D !important;
-    font-weight: 600;
-}
-.task-card .due-soon {
-    color: #FFA94D !important;
-    font-weight: 600;
-}
-.task-card .desc {
-    font-size: 0.85rem;
-    color: #9CA3AF;
-    margin-top: 0.5rem;
-    border-top: 1px solid #1E2330;
-    padding-top: 0.5rem;
-}
+.task-meta .overdue { color: #E05C5C; font-weight: 700; }
+.task-meta .soon    { color: #E09A3A; font-weight: 700; }
+.task-meta .ok      { color: #4B5563; }
 
-/* Section title */
-.section-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
+.task-desc {
+    font-size: 0.78rem;
     color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin: 1.5rem 0 0.8rem 0;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid #1C2030;
+    font-weight: 400;
+    line-height: 1.5;
 }
 
-/* Add button */
 .stButton > button {
-    background: #6C63FF;
-    color: #FFFFFF;
+    background: #6366F1;
+    color: #fff;
     border: none;
-    border-radius: 10px;
-    font-family: 'Syne', sans-serif;
+    border-radius: 8px;
+    font-family: 'Manrope', sans-serif !important;
     font-weight: 700;
-    font-size: 0.9rem;
-    padding: 0.55rem 1.4rem;
-    transition: background 0.2s, transform 0.1s;
+    font-size: 0.82rem;
+    padding: 0.45rem 1rem;
+    letter-spacing: 0.01em;
 }
-.stButton > button:hover {
-    background: #5A52E8;
-    transform: translateY(-1px);
-}
-.stButton > button:active { transform: translateY(0); }
+.stButton > button:hover { background: #4F52D3; }
 
-/* Form styling */
+div[data-baseweb="select"] > div,
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
-.stSelectbox > div > div,
-.stDateInput > div > div > input {
-    background: #1A1D27 !important;
-    border: 1px solid #2A2D3E !important;
-    border-radius: 10px !important;
-    color: #E8EAF0 !important;
+.stDateInput > div > div > input,
+.stTimeInput > div > div > input {
+    background: #13161F !important;
+    border: 1px solid #1C2030 !important;
+    border-radius: 8px !important;
+    color: #D1D5DB !important;
+    font-family: 'Manrope', sans-serif !important;
 }
 
-/* Streamlit selectbox dropdown */
-div[data-baseweb="select"] > div {
-    background: #1A1D27 !important;
-    border-color: #2A2D3E !important;
-    border-radius: 10px !important;
+label, .stSelectbox label, .stTextInput label,
+.stTextArea label, .stDateInput label {
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    color: #6B7280 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
 }
 
-/* Expander */
-details {
-    background: #12151C;
-    border: 1px solid #1E2330 !important;
-    border-radius: 12px;
-    padding: 0.3rem 0.8rem;
-}
-
-/* Empty state */
-.empty-state {
+.empty-msg {
     text-align: center;
-    padding: 4rem 2rem;
-    color: #6B7280;
+    padding: 5rem 0;
+    color: #374151;
 }
-.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
-.empty-state h3 {
-    font-family: 'Syne', sans-serif;
+.empty-msg h3 {
+    font-size: 1.1rem;
     font-weight: 700;
-    color: #9CA3AF;
-    margin-bottom: 0.5rem;
-}
-
-/* Checkbox styling */
-.stCheckbox > label { color: #9CA3AF; font-size: 0.85rem; }
-
-/* Filter row */
-.filter-label {
-    font-size: 0.75rem;
-    color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
+    color: #4B5563;
     margin-bottom: 0.3rem;
+}
+.empty-msg p { font-size: 0.85rem; }
+
+hr { border-color: #1C2030 !important; }
+
+.form-box {
+    background: #0E1117;
+    border: 1px solid #1C2030;
+    border-radius: 14px;
+    padding: 1.6rem;
+    margin-bottom: 1.5rem;
+}
+.form-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #F3F4F6;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.3px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 def days_until(date_str):
     try:
         d = datetime.strptime(str(date_str), "%Y-%m-%d").date()
@@ -320,90 +331,174 @@ def days_until(date_str):
     except:
         return 9999
 
-def format_date(date_str):
+def fmt_date(date_str):
     try:
-        d = datetime.strptime(str(date_str), "%Y-%m-%d")
-        return d.strftime("%d %b %Y")
+        return datetime.strptime(str(date_str), "%Y-%m-%d").strftime("%d %b %Y")
     except:
         return str(date_str)
 
-def format_time(time_str):
-    try:
-        return datetime.strptime(str(time_str), "%H:%M:%S").strftime("%I:%M %p")
-    except:
+def fmt_time(time_str):
+    if not time_str:
+        return ""
+    for fmt in ("%H:%M:%S", "%H:%M"):
         try:
-            return datetime.strptime(str(time_str), "%H:%M").strftime("%I:%M %p")
+            return datetime.strptime(str(time_str), fmt).strftime("%I:%M %p")
         except:
-            return str(time_str)
+            pass
+    return ""
 
-def date_label(days):
-    if days < 0:    return f"⚠ {abs(days)}d overdue", "overdue"
-    if days == 0:   return "⚡ Due today", "due-soon"
-    if days == 1:   return "⏰ Due tomorrow", "due-soon"
-    if days <= 3:   return f"⏳ {days} days left", "due-soon"
-    return f"📅 {days} days left", ""
-
-def get_unique_courses():
-    courses = set()
-    for t in st.session_state.tasks:
-        courses.add(t.get("course", ""))
-    return sorted(courses)
+def deadline_label(days):
+    if days < 0:   return f"{abs(days)}d overdue", "overdue"
+    if days == 0:  return "Due today", "soon"
+    if days == 1:  return "Due tomorrow", "soon"
+    if days <= 4:  return f"{days} days left", "soon"
+    return f"{days} days left", "ok"
 
 
-# ── Add / Edit form ───────────────────────────────────────────────────────────
+# ---------- sidebar ----------
+
+with st.sidebar:
+    st.markdown('<div class="tb-logo">Task<span>Board</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="tb-sub">Student Planner</div>', unsafe_allow_html=True)
+
+    if st.button("Add New Task", use_container_width=True):
+        st.session_state.show_form = True
+        st.session_state.edit_id = None
+
+    st.markdown('<div class="section-label">Filter and Sort</div>', unsafe_allow_html=True)
+
+    sort_by = st.selectbox("Sort by", [
+        "Deadline (soonest first)",
+        "Deadline (latest first)",
+        "Priority (high to low)",
+        "Alphabetically (A to Z)",
+        "Alphabetically (Z to A)",
+        "Date Added (newest)",
+        "Date Added (oldest)",
+    ], label_visibility="collapsed")
+
+    filter_cat = st.multiselect("Category", CATEGORIES, placeholder="All categories")
+
+    all_courses = sorted(set(
+        [t.get("course", "") for t in st.session_state.tasks] + st.session_state.courses
+    ))
+    filter_course = st.multiselect("Course", all_courses, placeholder="All courses")
+
+    filter_priority = st.multiselect("Priority", PRIORITY, placeholder="All priorities")
+
+    show_done = st.toggle("Show completed", value=True)
+
+    st.markdown('<div class="section-label">Overview</div>', unsafe_allow_html=True)
+
+    tasks_all = st.session_state.tasks
+    total     = len(tasks_all)
+    done_cnt  = sum(1 for t in tasks_all if t.get("done"))
+    overdue   = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_date"]) < 0)
+    due_today = sum(1 for t in tasks_all if not t.get("done") and days_until(t["due_date"]) == 0)
+
+    st.markdown(f"""
+    <div class="stat-grid">
+        <div class="stat-box"><div class="n">{total}</div><div class="l">Total</div></div>
+        <div class="stat-box"><div class="n green">{done_cnt}</div><div class="l">Done</div></div>
+        <div class="stat-box"><div class="n red">{overdue}</div><div class="l">Overdue</div></div>
+        <div class="stat-box"><div class="n amber">{due_today}</div><div class="l">Today</div></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-label">Courses</div>', unsafe_allow_html=True)
+    if st.button("Manage Courses", use_container_width=True):
+        st.session_state.show_add_course = not st.session_state.show_add_course
+
+
+# ---------- main area ----------
+
+st.markdown('<div class="page-title">TaskBoard</div>', unsafe_allow_html=True)
+st.markdown('<div class="page-sub">Stay on top of every deadline.</div>', unsafe_allow_html=True)
+
+
+# ---------- manage courses panel ----------
+
+if st.session_state.show_add_course:
+    st.markdown('<div class="form-box">', unsafe_allow_html=True)
+    st.markdown('<div class="form-title">Manage Courses</div>', unsafe_allow_html=True)
+
+    new_course = st.text_input("Add a new course", placeholder="e.g. Compiler Construction")
+    c1, c2 = st.columns([1, 3])
+    with c1:
+        if st.button("Add Course", use_container_width=True):
+            nc = new_course.strip()
+            if nc and nc not in st.session_state.courses:
+                st.session_state.courses.append(nc)
+                save_courses(st.session_state.courses)
+                st.success(f'"{nc}" added.')
+                st.rerun()
+            elif nc in st.session_state.courses:
+                st.warning("Already exists.")
+
+    if st.session_state.courses:
+        st.markdown("<br>**Current courses** (click to remove):", unsafe_allow_html=True)
+        cols = st.columns(3)
+        for i, c in enumerate(sorted(st.session_state.courses)):
+            with cols[i % 3]:
+                if st.button(f"x  {c}", key=f"rm_{c}", use_container_width=True):
+                    st.session_state.courses.remove(c)
+                    save_courses(st.session_state.courses)
+                    st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ---------- add/edit form ----------
+
 def task_form(edit_task=None):
     is_edit = edit_task is not None
-    title_val     = edit_task.get("title", "")          if is_edit else ""
-    cat_val       = edit_task.get("category", CATEGORIES[0]) if is_edit else CATEGORIES[0]
-    course_val    = edit_task.get("course", COURSES[0]) if is_edit else COURSES[0]
-    custom_course = edit_task.get("custom_course", "")  if is_edit else ""
-    priority_val  = edit_task.get("priority", PRIORITY[1]) if is_edit else PRIORITY[1]
-    desc_val      = edit_task.get("description", "")    if is_edit else ""
-    date_val      = datetime.strptime(str(edit_task.get("due_date", date.today())), "%Y-%m-%d").date() if is_edit else date.today()
-    time_val_str  = edit_task.get("due_time", "")       if is_edit else ""
+    courses = sorted(st.session_state.courses)
 
-    with st.form("task_form", clear_on_submit=True):
-        st.markdown(f"### {'✏️ Edit Task' if is_edit else '➕ Add New Task'}")
-        st.markdown("---")
+    title_val    = edit_task.get("title", "")              if is_edit else ""
+    cat_val      = edit_task.get("category", CATEGORIES[0]) if is_edit else CATEGORIES[0]
+    course_val   = edit_task.get("course", courses[0] if courses else "") if is_edit else (courses[0] if courses else "")
+    priority_val = edit_task.get("priority", "Medium")     if is_edit else "Medium"
+    desc_val     = edit_task.get("description", "")        if is_edit else ""
+    date_val     = datetime.strptime(str(edit_task.get("due_date", date.today())), "%Y-%m-%d").date() if is_edit else date.today()
+    time_val_str = edit_task.get("due_time", "")           if is_edit else ""
 
+    st.markdown('<div class="form-box">', unsafe_allow_html=True)
+    st.markdown(f'<div class="form-title">{"Edit Task" if is_edit else "New Task"}</div>', unsafe_allow_html=True)
+
+    with st.form("task_form"):
         col1, col2 = st.columns(2)
         with col1:
-            title = st.text_input("Task Title *", value=title_val, placeholder="e.g. Submit DSA Assignment")
+            title = st.text_input("Task Title", value=title_val, placeholder="e.g. Submit DSA Assignment")
         with col2:
-            category = st.selectbox("Category *", CATEGORIES,
-                                    index=CATEGORIES.index(cat_val) if cat_val in CATEGORIES else 0)
+            cat_idx = CATEGORIES.index(cat_val) if cat_val in CATEGORIES else 0
+            category = st.selectbox("Category", CATEGORIES, index=cat_idx)
 
         col3, col4 = st.columns(2)
         with col3:
-            course_choice = st.selectbox("Course *", COURSES,
-                                         index=COURSES.index(course_val) if course_val in COURSES else 0)
+            course_idx = courses.index(course_val) if course_val in courses else 0
+            course = st.selectbox("Course", courses if courses else ["No courses added yet"], index=course_idx)
         with col4:
-            priority = st.selectbox("Priority", PRIORITY,
-                                    index=PRIORITY.index(priority_val) if priority_val in PRIORITY else 1)
-
-        if course_choice == "Custom (type below)…":
-            custom_course = st.text_input("Custom Course Name", value=custom_course,
-                                          placeholder="Enter your course name")
-        else:
-            custom_course = ""
+            pri_idx = PRIORITY.index(priority_val) if priority_val in PRIORITY else 1
+            priority = st.selectbox("Priority", PRIORITY, index=pri_idx)
 
         col5, col6 = st.columns(2)
         with col5:
-            due_date = st.date_input("Due Date *", value=date_val, min_value=date(2020, 1, 1))
+            due_date = st.date_input("Due Date", value=date_val, min_value=date(2020, 1, 1))
         with col6:
-            due_time_input = st.time_input("Due Time (optional)",
-                                           value=datetime.strptime(time_val_str, "%H:%M:%S").time()
-                                           if time_val_str else time(23, 59))
+            try:
+                tval = datetime.strptime(time_val_str, "%H:%M:%S").time() if time_val_str else time(23, 59)
+            except:
+                tval = time(23, 59)
+            due_time_input = st.time_input("Due Time", value=tval)
 
         description = st.text_area("Description (optional)", value=desc_val,
-                                   placeholder="Add any notes, links, or details…", height=100)
+                                   placeholder="Notes, links, anything relevant.", height=90)
 
-        col_sub, col_cancel = st.columns([1, 3])
-        with col_sub:
-            submitted = st.form_submit_button("💾 Save Task" if is_edit else "✅ Add Task",
-                                              use_container_width=True)
-        with col_cancel:
-            cancelled = st.form_submit_button("Cancel", use_container_width=False)
+        col_s, col_c = st.columns([1, 4])
+        with col_s:
+            submitted = st.form_submit_button("Save Task", use_container_width=True)
+        with col_c:
+            cancelled = st.form_submit_button("Cancel")
 
         if cancelled:
             st.session_state.show_form = False
@@ -412,122 +507,38 @@ def task_form(edit_task=None):
 
         if submitted:
             if not title.strip():
-                st.error("Task title is required.")
+                st.error("Title is required.")
                 return
-            final_course = custom_course.strip() if course_choice == "Custom (type below)…" else course_choice
-            if not final_course:
-                st.error("Please enter a course name.")
+            if not courses:
+                st.error("Add at least one course first.")
                 return
 
             task = {
-                "id":           edit_task["id"] if is_edit else str(uuid.uuid4()),
-                "title":        title.strip(),
-                "category":     category,
-                "course":       final_course,
-                "priority":     priority,
-                "due_date":     str(due_date),
-                "due_time":     str(due_time_input),
-                "description":  description.strip(),
-                "done":         edit_task.get("done", False) if is_edit else False,
-                "added_at":     edit_task.get("added_at", datetime.now().isoformat()) if is_edit else datetime.now().isoformat(),
+                "id":          edit_task["id"] if is_edit else str(uuid.uuid4()),
+                "title":       title.strip(),
+                "category":    category,
+                "course":      course,
+                "priority":    priority,
+                "due_date":    str(due_date),
+                "due_time":    str(due_time_input),
+                "description": description.strip(),
+                "done":        edit_task.get("done", False) if is_edit else False,
+                "added_at":    edit_task.get("added_at", datetime.now().isoformat()) if is_edit else datetime.now().isoformat(),
             }
 
             if is_edit:
-                st.session_state.tasks = [t if t["id"] != task["id"] else task
-                                          for t in st.session_state.tasks]
+                st.session_state.tasks = [t if t["id"] != task["id"] else task for t in st.session_state.tasks]
             else:
                 st.session_state.tasks.append(task)
 
             save_tasks(st.session_state.tasks)
             st.session_state.show_form = False
             st.session_state.edit_id = None
-            st.success("Task saved!" if is_edit else "Task added!")
             st.rerun()
 
-
-# ── Sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("""
-    <div style="padding:1.2rem 0 0.5rem 0;">
-        <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;">
-            Task<span style="color:#6C63FF;">Board</span>
-        </div>
-        <div style="font-size:0.78rem;color:#6B7280;margin-top:2px;">Student Planner</div>
-    </div>
-    <hr style="border-color:#1E2330;margin:0.8rem 0;">
-    """, unsafe_allow_html=True)
-
-    if st.button("＋  Add New Task", use_container_width=True):
-        st.session_state.show_form = True
-        st.session_state.edit_id = None
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Filters
-    st.markdown("**🔍 Filter & Sort**")
-
-    sort_by = st.selectbox("Sort by", [
-        "Deadline (soonest first)",
-        "Deadline (latest first)",
-        "Priority (high → low)",
-        "Alphabetically (A–Z)",
-        "Alphabetically (Z–A)",
-        "Date Added (newest)",
-        "Date Added (oldest)",
-    ])
-
-    filter_cat = st.multiselect("Category", [c.split("  ")[1] for c in CATEGORIES],
-                                placeholder="All categories")
-
-    all_courses = get_unique_courses()
-    filter_course = st.multiselect("Course", all_courses, placeholder="All courses")
-
-    filter_priority = st.multiselect("Priority", ["High", "Medium", "Low"],
-                                     placeholder="All priorities")
-
-    show_done = st.toggle("Show completed tasks", value=True)
-
-    st.markdown("<hr style='border-color:#1E2330;margin:1rem 0'>", unsafe_allow_html=True)
-
-    # Quick stats in sidebar
-    tasks = st.session_state.tasks
-    total     = len(tasks)
-    done_cnt  = sum(1 for t in tasks if t.get("done"))
-    overdue   = sum(1 for t in tasks if not t.get("done") and days_until(t["due_date"]) < 0)
-    due_today = sum(1 for t in tasks if not t.get("done") and days_until(t["due_date"]) == 0)
-
-    st.markdown(f"""
-    <div style='font-size:0.75rem;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:0.6rem'>Overview</div>
-    <div style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;'>
-        <div style='background:#1A1D27;border-radius:10px;padding:0.7rem;text-align:center;'>
-            <div style='font-family:Syne,sans-serif;font-size:1.5rem;font-weight:800;color:#6C63FF'>{total}</div>
-            <div style='font-size:0.7rem;color:#6B7280'>Total</div>
-        </div>
-        <div style='background:#1A1D27;border-radius:10px;padding:0.7rem;text-align:center;'>
-            <div style='font-family:Syne,sans-serif;font-size:1.5rem;font-weight:800;color:#69DB7C'>{done_cnt}</div>
-            <div style='font-size:0.7rem;color:#6B7280'>Done</div>
-        </div>
-        <div style='background:#1A1D27;border-radius:10px;padding:0.7rem;text-align:center;'>
-            <div style='font-family:Syne,sans-serif;font-size:1.5rem;font-weight:800;color:#FF4D4D'>{overdue}</div>
-            <div style='font-size:0.7rem;color:#6B7280'>Overdue</div>
-        </div>
-        <div style='background:#1A1D27;border-radius:10px;padding:0.7rem;text-align:center;'>
-            <div style='font-family:Syne,sans-serif;font-size:1.5rem;font-weight:800;color:#FFA94D'>{due_today}</div>
-            <div style='font-size:0.7rem;color:#6B7280'>Due Today</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
-# ── Main area ─────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="tb-header">
-    <h1>Task<span>Board</span></h1>
-    <p>Your academic planner — stay on top of every deadline.</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Show form if needed
 edit_task_data = None
 if st.session_state.edit_id:
     for t in st.session_state.tasks:
@@ -537,122 +548,137 @@ if st.session_state.edit_id:
 
 if st.session_state.show_form or st.session_state.edit_id:
     task_form(edit_task=edit_task_data)
-    st.markdown("---")
 
-# ── Filter & sort tasks ───────────────────────────────────────────────────────
+
+# ---------- filter and sort ----------
+
 tasks = st.session_state.tasks[:]
 
-# Filter
 if not show_done:
     tasks = [t for t in tasks if not t.get("done")]
 
 if filter_cat:
-    tasks = [t for t in tasks if any(fc in t.get("category", "") for fc in filter_cat)]
+    tasks = [t for t in tasks if t.get("category", "") in filter_cat]
 
 if filter_course:
     tasks = [t for t in tasks if t.get("course", "") in filter_course]
 
 if filter_priority:
-    tasks = [t for t in tasks if any(fp in t.get("priority", "") for fp in filter_priority)]
+    tasks = [t for t in tasks if t.get("priority", "") in filter_priority]
 
-# Sort
+pmap = {"High": 0, "Medium": 1, "Low": 2}
+
 if sort_by == "Deadline (soonest first)":
     tasks.sort(key=lambda t: (t.get("done", False), days_until(t["due_date"])))
 elif sort_by == "Deadline (latest first)":
     tasks.sort(key=lambda t: (t.get("done", False), -days_until(t["due_date"])))
-elif sort_by == "Priority (high → low)":
-    pmap = {"🔴  High": 0, "🟡  Medium": 1, "🟢  Low": 2}
+elif sort_by == "Priority (high to low)":
     tasks.sort(key=lambda t: (t.get("done", False), pmap.get(t.get("priority", ""), 1)))
-elif sort_by == "Alphabetically (A–Z)":
+elif sort_by == "Alphabetically (A to Z)":
     tasks.sort(key=lambda t: (t.get("done", False), t.get("title", "").lower()))
-elif sort_by == "Alphabetically (Z–A)":
+elif sort_by == "Alphabetically (Z to A)":
     tasks.sort(key=lambda t: (t.get("done", False), t.get("title", "").lower()), reverse=True)
 elif sort_by == "Date Added (newest)":
     tasks.sort(key=lambda t: (t.get("done", False), t.get("added_at", "")), reverse=True)
 elif sort_by == "Date Added (oldest)":
     tasks.sort(key=lambda t: (t.get("done", False), t.get("added_at", "")))
 
-# ── Render tasks ──────────────────────────────────────────────────────────────
-pending = [t for t in tasks if not t.get("done")]
-done    = [t for t in tasks if t.get("done")]
+
+# ---------- render ----------
 
 def render_task(task):
-    tid   = task["id"]
-    done_ = task.get("done", False)
-    cat   = task.get("category", "📌  Other")
-    color = CAT_COLORS.get(cat, "#ADB5BD")
-    pcolor = PRIORITY_COLORS.get(task.get("priority", ""), "#ADB5BD")
-    days  = days_until(task["due_date"])
-    dlabel, dcls = date_label(days)
+    tid    = task["id"]
+    done_  = task.get("done", False)
+    cat    = task.get("category", "Other")
+    color  = CAT_COLORS.get(cat, "#6B7280")
+    pcolor = PRIORITY_COLORS.get(task.get("priority", ""), "#6B7280")
+    days   = days_until(task["due_date"])
+    dlabel, dcls = deadline_label(days)
     card_cls = "task-card done" if done_ else "task-card"
 
-    cat_label = cat.split("  ")[-1] if "  " in cat else cat
+    time_part = fmt_time(task.get("due_time", ""))
+    time_display = f"  {time_part}" if time_part else ""
 
-    time_str = f" · {format_time(task['due_time'])}" if task.get("due_time") else ""
-    desc_html = f'<div class="desc">{task["description"]}</div>' if task.get("description") else ""
-    pri_label = task.get("priority", "").split("  ")[-1] if "  " in task.get("priority","") else task.get("priority","")
+    # Safe-escape description to prevent any HTML rendering
+    raw_desc = task.get("description", "")
+    desc_html = ""
+    if raw_desc:
+        safe_desc = html.escape(raw_desc)
+        desc_html = f'<div class="task-desc">{safe_desc}</div>'
+
+    added_str = ""
+    if task.get("added_at"):
+        try:
+            added_str = datetime.fromisoformat(task["added_at"]).strftime("%d %b")
+        except:
+            pass
+
+    safe_title = html.escape(task.get("title", ""))
+    safe_course = html.escape(task.get("course", ""))
 
     st.markdown(f"""
     <div class="{card_cls}">
-        <div class="accent-bar" style="background:{color}"></div>
-        <div style="padding-left:0.5rem">
+        <div class="bar" style="background:{color}"></div>
+        <div style="margin-left:0.6rem">
             <div>
-                <span class="cat-badge" style="background:{color}22;color:{color}">{cat_label}</span>
-                <span class="cat-badge" style="background:{pcolor}22;color:{pcolor};margin-left:6px">{pri_label}</span>
+                <span class="badge" style="background:{color}1A;color:{color}">{html.escape(cat)}</span>
+                <span class="badge" style="background:{pcolor}1A;color:{pcolor}">{html.escape(task.get("priority",""))}</span>
             </div>
-            <div class="task-title">{"✅ " if done_ else ""}{task["title"]}</div>
-            <div class="course-name">📚 {task["course"]}</div>
-            <div class="meta-row">
+            <div class="task-title">{safe_title}</div>
+            <div class="task-course">{safe_course}</div>
+            <div class="task-meta">
                 <span class="{dcls}">{dlabel}</span>
-                <span>🗓 {format_date(task["due_date"])}{time_str}</span>
-                <span>🕐 Added {datetime.fromisoformat(task["added_at"]).strftime("%d %b") if task.get("added_at") else "—"}</span>
+                <span>{fmt_date(task["due_date"])}{time_display}</span>
+                {"<span>Added " + added_str + "</span>" if added_str else ""}
             </div>
             {desc_html}
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        btn_label = "↩️ Mark Pending" if done_ else "✅ Mark Done"
-        if st.button(btn_label, key=f"done_{tid}", use_container_width=True):
+    ca, cb, cc = st.columns([2, 1, 1])
+    with ca:
+        btn_lbl = "Mark Pending" if done_ else "Mark Done"
+        if st.button(btn_lbl, key=f"done_{tid}", use_container_width=True):
             for t in st.session_state.tasks:
                 if t["id"] == tid:
                     t["done"] = not t["done"]
                     break
             save_tasks(st.session_state.tasks)
             st.rerun()
-    with col2:
-        if st.button("✏️ Edit", key=f"edit_{tid}", use_container_width=True):
+    with cb:
+        if st.button("Edit", key=f"edit_{tid}", use_container_width=True):
             st.session_state.edit_id = tid
             st.session_state.show_form = False
             st.rerun()
-    with col3:
-        if st.button("🗑 Delete", key=f"del_{tid}", use_container_width=True):
+    with cc:
+        if st.button("Delete", key=f"del_{tid}", use_container_width=True):
             st.session_state.tasks = [t for t in st.session_state.tasks if t["id"] != tid]
             save_tasks(st.session_state.tasks)
             st.rerun()
 
-    st.markdown("<div style='margin-bottom:0.2rem'></div>", unsafe_allow_html=True)
 
+pending = [t for t in tasks if not t.get("done")]
+done    = [t for t in tasks if t.get("done")]
 
 if not tasks:
     st.markdown("""
-    <div class="empty-state">
-        <div class="icon">📭</div>
-        <h3>No tasks here</h3>
-        <p>Hit "Add New Task" to get started.</p>
+    <div class="empty-msg">
+        <h3>No tasks</h3>
+        <p>Hit "Add New Task" in the sidebar to get started.</p>
     </div>
     """, unsafe_allow_html=True)
 else:
     if pending:
-        st.markdown(f'<div class="section-title">📌 Pending — {len(pending)} task{"s" if len(pending)!=1 else ""}</div>',
+        n = len(pending)
+        st.markdown(f'<div class="section-label">Pending &nbsp; {n} task{"s" if n != 1 else ""}</div>',
                     unsafe_allow_html=True)
         for t in pending:
             render_task(t)
 
     if done and show_done:
-        st.markdown(f'<div class="section-title">✅ Completed — {len(done)} task{"s" if len(done)!=1 else ""}</div>',
+        n = len(done)
+        st.markdown(f'<div class="section-label">Completed &nbsp; {n} task{"s" if n != 1 else ""}</div>',
                     unsafe_allow_html=True)
         for t in done:
             render_task(t)
