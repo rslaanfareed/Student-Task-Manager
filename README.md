@@ -3,6 +3,8 @@
 # TaskBoard
 ### Student Task Manager built with Streamlit
 
+![Demo](task_manager.gif)
+
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org/)
 
