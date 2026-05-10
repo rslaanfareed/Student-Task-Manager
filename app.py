@@ -401,7 +401,7 @@ h_left, h_btn1, h_btn2 = st.columns([4, 1, 1], gap="small", vertical_alignment="
 
 with h_left:
     st.markdown("""
-    <h1 class="page-title">TaskBoard</h1>
+    <h1 class="page-title">Task Manager</h1>
     <p class="page-sub">UET Taxila &nbsp;&middot;&nbsp; Student Planner</p>
     """, unsafe_allow_html=True)
 
