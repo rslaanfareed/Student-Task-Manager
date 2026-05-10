@@ -6,7 +6,7 @@ import uuid
 import html as htmllib
 
 st.set_page_config(
-    page_title="TaskBoard · UET Taxila",
+    page_title="Task Manager",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
